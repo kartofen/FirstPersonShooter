@@ -13,8 +13,8 @@ namespace ConsoleGameEngine
             add mouse:
                 https://github.com/OneLoneCoder/videos/blob/master/olcConsoleGameEngine.h#L419
                 https://github.com/OneLoneCoder/videos/blob/master/olcConsoleGameEngine.h#L875
-        
-            
+                https://stackoverflow.com/a/29971246
+                important: lpdword > int*
         */
 
         [System.Runtime.InteropServices.DllImport("User32.dll")]
