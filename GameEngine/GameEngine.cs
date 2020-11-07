@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -8,6 +9,17 @@ namespace ConsoleGameEngine
 {
     public class GameEngine
     {
+    /*  //todo: 
+            add mouse:
+                https://github.com/OneLoneCoder/videos/blob/master/olcConsoleGameEngine.h#L419
+                https://github.com/OneLoneCoder/videos/blob/master/olcConsoleGameEngine.h#L875
+        
+            
+        */
+
+        [System.Runtime.InteropServices.DllImport("User32.dll")]
+        public static extern short GetAsyncKeyState(int vKey);
+
         [DllImport("Kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         static extern SafeFileHandle CreateFile(
             string fileName,
@@ -33,6 +45,18 @@ namespace ConsoleGameEngine
             public short Y;
 
             public Coord(short X, short Y)
+            {
+                this.X = X;
+                this.Y = Y;
+            }
+        };
+
+        public struct CoordF
+        {
+            public float X;
+            public float Y;
+
+            public CoordF(float X, float Y)
             {
                 this.X = X;
                 this.Y = Y;
@@ -68,6 +92,7 @@ namespace ConsoleGameEngine
         public static int ScreenWidth { get; set; }
         public static ConsoleKeyInfo key { get; set; } = new ConsoleKeyInfo();
         public static float deltaTime { get; set; }
+        public static int GameTick { get; set; } = 0;
 
         public GameEngine()
         {
@@ -86,21 +111,26 @@ namespace ConsoleGameEngine
         }
 
         public void OnGameStart()
+        {
+            Thread thread = new Thread(GameThread);
+            thread.Start();
+        }
+
+        public void GameThread()
         {    
             DateTime time1 = DateTime.Now;
             DateTime time2 = DateTime.Now;
 
+            OnUserCreate();
+        
             while(true)
             {
+                GameTick++;
+
                 time2 = DateTime.Now;
                 deltaTime = (time2.Ticks - time1.Ticks) / 10000000f;
-                if(Console.KeyAvailable == true)
-                {
-                    key = Console.ReadKey();
-                    OnKeyPressed(key);
-                }
-                
-                OnAIUpdate();
+
+                OnKeyPressed();
                 OnUserUpdate();
                 AddInformationToBuffer();
 
@@ -127,8 +157,8 @@ namespace ConsoleGameEngine
             }
         }
         protected virtual void OnUserUpdate() { return; }
-        protected virtual void OnKeyPressed(ConsoleKeyInfo key) { return; }
-        protected virtual void OnAIUpdate() { return; }
+        protected virtual void OnKeyPressed() { return; }
+        protected virtual void OnUserCreate() { return; }
         protected virtual void AddInformationToBuffer() 
         {
             for (int i = 0; i < buf.Length; i++)
@@ -141,12 +171,92 @@ namespace ConsoleGameEngine
             return;
         }
 
-        public struct AI
+        public struct Sprite
         {
-            public Coord coords;
-            public AI(int x, int y)
+            public char[,] sprite_chars;
+            public short[,] sprite_attributes;
+            public byte[,] sprite_bytes;
+            public int height;
+            public int width;
+            public Sprite(char[,] sprite_chars, short[,] attributes, int height, int width)
             {
-                coords = new Coord((short)x, (short)y);
+                this.height = height;
+                this.width = width;           
+                this.sprite_chars = sprite_chars;
+                this.sprite_attributes= attributes;
+                this.sprite_bytes = new byte[height, width];
+                this.sprite_bytes = CharSpriteToByteSprite(sprite_chars);
+            }
+
+            public byte[,] CharSpriteToByteSprite(char[,] sprite_chars_)
+            {
+                byte[,] bytes = new byte[height, width];
+                for(int i = 0; i < height; i++)
+                    for(int j = 0; j < width; j++)
+                    {
+                        if(sprite_chars_[i, j] == '█')
+                            bytes[i, j] = 219;
+                        else if(sprite_chars_[i, j] == '▓')
+                            bytes[i, j] = 178;
+                        else if(sprite_chars_[i, j] == '▒')
+                            bytes[i, j] = 177;
+                        else if(sprite_chars_[i, j] == '░')
+                            bytes[i, j] = 176;
+                        else if(sprite_chars_[i, j] == ' ')
+                            bytes[i, j] = 32;
+                        else
+                            bytes[i, j] = (byte)(int)sprite_chars[i, j];
+                    }
+                return bytes;
+            }
+
+            //todo fix
+            public void Animate(List<Sprite> animation, int interval_animation, int interval_frames)
+            {
+                int old_GameTick = 0;
+                int i = 0;
+                if(GameTick - old_GameTick == interval_animation)
+                {
+                    if(i == animation.Count)
+                    {
+                        i = 0;
+                    }
+
+                    sprite_chars = animation[i].sprite_chars;
+                    sprite_attributes = animation[i].sprite_attributes;
+                    sprite_bytes = CharSpriteToByteSprite(sprite_chars);
+                    i++;
+
+                    old_GameTick = GameTick;
+                }
+            }
+
+            public char SampleGlyphCharSprite(float x, float y)
+            {
+                int sx = (int)(x * (float)this.width);
+                int sy = (int)(y * (float)this.height - 1.0f);
+                if (sx < 0 || sx >= this.width || sy < 0 || sy >= this.height)
+                    return ' ';
+                else
+                    return this.sprite_chars[sy, sx];
+            }
+            public byte SampleGlyphByteSprite(float x, float y)
+            {
+                int sx = (int)(x * (float)this.width);
+                int sy = (int)(y * (float)this.height - 1.0f);
+                if (sx < 0 || sx >= this.width || sy < 0 || sy >= this.height)
+                    return 32;
+                else
+                    return this.sprite_bytes[sy, sx];
+            }
+            public short SampleGlyphAttribute(float x, float y)
+            {
+                int sx = (int)(x * (float)this.width);
+                int sy = (int)(y * (float)this.height - 1.0f);
+                if (sx < 0 || sx >=this. width || sy < 0 || sy >= this.height)
+                    return 0;
+                else
+                    return this.sprite_attributes[sy, sx];
             }
         }
     }

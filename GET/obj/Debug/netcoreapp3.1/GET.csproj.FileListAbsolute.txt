@@ -1,0 +1,16 @@
+F:\GitRepos\Console\FirstPersonShooter\GET\bin\Debug\netcoreapp3.1\GET.exe
+F:\GitRepos\Console\FirstPersonShooter\GET\bin\Debug\netcoreapp3.1\GET.deps.json
+F:\GitRepos\Console\FirstPersonShooter\GET\bin\Debug\netcoreapp3.1\GET.runtimeconfig.json
+F:\GitRepos\Console\FirstPersonShooter\GET\bin\Debug\netcoreapp3.1\GET.runtimeconfig.dev.json
+F:\GitRepos\Console\FirstPersonShooter\GET\bin\Debug\netcoreapp3.1\GET.dll
+F:\GitRepos\Console\FirstPersonShooter\GET\bin\Debug\netcoreapp3.1\GET.pdb
+F:\GitRepos\Console\FirstPersonShooter\GET\bin\Debug\netcoreapp3.1\GameEngine.dll
+F:\GitRepos\Console\FirstPersonShooter\GET\bin\Debug\netcoreapp3.1\GameEngine.pdb
+F:\GitRepos\Console\FirstPersonShooter\GET\obj\Debug\netcoreapp3.1\GET.csprojAssemblyReference.cache
+F:\GitRepos\Console\FirstPersonShooter\GET\obj\Debug\netcoreapp3.1\GET.AssemblyInfoInputs.cache
+F:\GitRepos\Console\FirstPersonShooter\GET\obj\Debug\netcoreapp3.1\GET.AssemblyInfo.cs
+F:\GitRepos\Console\FirstPersonShooter\GET\obj\Debug\netcoreapp3.1\GET.csproj.CoreCompileInputs.cache
+F:\GitRepos\Console\FirstPersonShooter\GET\obj\Debug\netcoreapp3.1\GET.csproj.CopyComplete
+F:\GitRepos\Console\FirstPersonShooter\GET\obj\Debug\netcoreapp3.1\GET.dll
+F:\GitRepos\Console\FirstPersonShooter\GET\obj\Debug\netcoreapp3.1\GET.pdb
+F:\GitRepos\Console\FirstPersonShooter\GET\obj\Debug\netcoreapp3.1\GET.genruntimeconfig.cache
