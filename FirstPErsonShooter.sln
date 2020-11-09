@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GET", "GET\GET.csproj", "{B09FFF3B-4CD6-4B51-B0FE-EC32F28DE23E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FPS", "FPS\FPS.csproj", "{B09FFF3B-4CD6-4B51-B0FE-EC32F28DE23E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameEngine", "GameEngine\GameEngine.csproj", "{FC644566-E115-4B5B-9CD1-246428F5A77A}"
 EndProject

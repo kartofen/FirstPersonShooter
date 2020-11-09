@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using ConsoleGameEngine;
 
-namespace GET
+namespace FPS
 {
     class Game : GameEngine
     {
@@ -20,16 +20,9 @@ namespace GET
             ObjList.Add(Obj2);
         }
 
-        protected override void OnKeyPressed()//ConsoleKeyInfo key)
+        protected override void OnKeyPressed()
         {
-            short W = GetAsyncKeyState('W'); 
-            short A = GetAsyncKeyState('A'); 
-            short S = GetAsyncKeyState('S'); 
-            short D = GetAsyncKeyState('D'); 
-            short Q = GetAsyncKeyState('Q'); 
-            short E = GetAsyncKeyState('E'); 
-            short F = GetAsyncKeyState('F'); 
-            if(W != 0)
+            if(keys['W'].Held)
             {
                 PlayerX += MathF.Sin(PlayerA) * Speed * deltaTime;
                 PlayerY += MathF.Cos(PlayerA) * Speed * deltaTime;
@@ -39,11 +32,11 @@ namespace GET
                     PlayerY -= MathF.Cos(PlayerA) * Speed * deltaTime;
                 }
             }
-            if(A != 0)
+            if(keys['A'].Held)
             {
                 PlayerA -= (1f) * deltaTime;
             }
-            if(S != 0)
+            if(keys['S'].Held)
             {
                 PlayerX -= MathF.Sin(PlayerA) * Speed * deltaTime;
                 PlayerY -= MathF.Cos(PlayerA) * Speed * deltaTime;
@@ -53,11 +46,11 @@ namespace GET
                     PlayerY += MathF.Cos(PlayerA) * Speed * deltaTime;
                 }
             }
-            if(D != 0)
+            if(keys['D'].Held)
             {
                 PlayerA += (1f) * deltaTime;
             }
-            if(Q != 0)
+            if(keys['Q'].Held)
             {
                 PlayerX -= MathF.Cos(PlayerA) * Speed * deltaTime;
                 PlayerY += MathF.Sin(PlayerA) * Speed * deltaTime;
@@ -68,7 +61,7 @@ namespace GET
                     
                 }
             }
-            if(E != 0)
+            if(keys['E'].Held)
             {
                 PlayerX += MathF.Cos(PlayerA) * Speed * deltaTime;
                 PlayerY -= MathF.Sin(PlayerA) * Speed * deltaTime;
@@ -78,12 +71,23 @@ namespace GET
                     PlayerY += MathF.Sin(PlayerA) * Speed * deltaTime;
                 }
             }
-            if(F != 0)
+            if(keys['F'].Released)
             {
                 if(map[(int)PlayerX + 1, (int)PlayerY] == 'D') map[(int)PlayerX + 1, (int)PlayerY] = '.';
                 else if(map[(int)PlayerX - 1, (int)PlayerY] == 'D') map[(int)PlayerX - 1, (int)PlayerY] = '.';
                 else if(map[(int)PlayerX, (int)PlayerY + 1] == 'D') map[(int)PlayerX , (int)PlayerY + 1] = '.';
                 else if(map[(int)PlayerX, (int)PlayerY - 1] == 'D') map[(int)PlayerX, (int)PlayerY - 1] = '.';
+            }
+            if(keys[0x20].Released) //spacebar
+            {
+                Object o;
+                o.coords.X = PlayerX + MathF.Sin(PlayerA) * 3.0f;
+                o.coords.Y = PlayerY + MathF.Cos(PlayerA) * 3.0f;
+                o.velocity.X = MathF.Sin(PlayerA) * 8.0f;
+                o.velocity.Y = MathF.Cos(PlayerA) * 8.0f;
+                o.sprite = FireBall;
+                o.remove = false;
+                ObjList.Add(o);
             }
             return;
         }
@@ -95,21 +99,19 @@ namespace GET
             for (int nx = 0; nx < MapHeight; nx++)
                 for (int ny = 0; ny < MapWidth; ny++)
                 {
-                    buf[(ny) * ScreenWidth + nx].Char.AsciiChar = (byte)(int)map[nx, ny];
-                    buf[(ny) * ScreenWidth + nx].Attributes = 0;
+                    DrawB(nx, ny, (byte)(int)map[nx, ny], (short)COLOUR.FG_BLACK);
                 }
 
-            buf[((int)PlayerY) * ScreenWidth + (int)PlayerX].Char.AsciiChar = (byte)(int)'P';
-
-            DrawToScreenBuffer("FPS: " + 1f / deltaTime, 0, 33, buf);
-            DrawToScreenBuffer("Angle: " + PlayerA, 1, 33, buf);
-            DrawToScreenBuffer("GameTick: " + GameTick, 2, 33, buf);
+            DrawB((int)PlayerX, (int)PlayerY, (byte)(int)'P', (short)COLOUR.FG_BLACK);
+            DrawToScreenBuffer("FPS: " + 1f / deltaTime, 0, 33, COLOUR.FG_DARK_RED);
+            DrawToScreenBuffer("Angle: " + PlayerA, 1, 33, COLOUR.FG_DARK_RED);
+            DrawToScreenBuffer("GameTick: " + GameTick, 2, 33, COLOUR.FG_DARK_RED);
 
             for (int i = 0; i < buf.Length; i++)
             {
                 if (buf[i].Attributes == 0)
                 {
-                    buf[i].Attributes = 7;
+                    SetAttribute(i, 0, COLOUR.FG_GREY);
                 }
             }
             return;
@@ -122,11 +124,13 @@ namespace GET
             public CoordF coords;
             public CoordF velocity;
             public Sprite sprite;
-            public Object(CoordF coords, CoordF velocity, Sprite sprite)
+            public bool remove;
+            public Object(CoordF coords, CoordF velocity, Sprite sprite, bool remove)
             {
                 this.coords = coords;
                 this.sprite = sprite;
                 this.velocity = velocity;
+                this.remove = remove;
             }
         }
 
@@ -178,47 +182,38 @@ namespace GET
             20, 10
         );
 
-        static Sprite Obj3A1 = new Sprite(
+        static Sprite FireBall = new Sprite(
             new char[,] {
-                {' ', ' ', '█', ' ', ' '},
-                {' ', ' ', '█', ' ', ' '},
-                {'█', '█', '█', '█', '█'},
-                {' ', ' ', '█', ' ', ' '},
-                {' ', ' ', '█', ' ', ' '},
+                {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                {' ', ' ', ' ', '█', '█', ' ', ' ', ' '},
+                {' ', ' ', '█', '█', '█', '█', ' ', ' '},
+                {' ', ' ', '█', '█', '█', '█', ' ', ' '},
+                {' ', ' ', ' ', '█', '█', ' ', ' ', ' '},
+                {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+
             },
             new short[,] { 
-                {3, 3, 3, 3, 3}, 
-                {3, 3, 3, 3, 3}, 
-                {3, 3, 3, 3, 3}, 
-                {3, 3, 3, 3, 3}, 
-                {3, 3, 3, 3, 3} 
+                {8, 8, 8, 8, 8, 8, 8, 8},
+                {8, 8, 8, 8, 8, 8, 8, 8},
+                {8, 8, 8, 8, 8, 8, 8, 8},
+                {8, 8, 8, 4, 4, 8, 8, 8},
+                {8, 8, 8, 4, 4, 8, 8, 8},
+                {8, 8, 8, 8, 8, 8, 8, 8},
+                {8, 8, 8, 8, 8, 8, 8, 8},
+                {8, 8, 8, 8, 8, 8, 8, 8},
+                {8, 8, 8, 8, 8, 8, 8, 8},
             },
-            5, 5
-        );
-        static Sprite Obj3A2 = new Sprite(
-            new char[,] {
-                {' ', ' ', '█', ' ', ' '},
-                {' ', ' ', ' ', ' ', ' '},
-                {'█', '█', ' ', '█', '█'},
-                {' ', ' ', ' ', ' ', ' '},
-                {' ', ' ', '█', ' ', ' '},
-            },
-            new short[,] { 
-                {3, 3, 3, 3, 3}, 
-                {3, 3, 3, 3, 3}, 
-                {3, 3, 3, 3, 3}, 
-                {3, 3, 3, 3, 3}, 
-                {3, 3, 3, 3, 3} 
-            },
-            5, 5
+            10, 8
         );
         
-        static Object Obj1 = new Object(new CoordF(8.5f, 10.5f), new CoordF(0, 0), LampSprite);
-        static Object Obj2 = new Object(new CoordF(25.5f, 8.5f), new CoordF(0, 0), LampSprite);
-        //static Object Animated_Obj3 = new Object(new CoordF(9.5f, 14.5f), new CoordF(0, 0), Obj3A1);
+        static Object Obj1 = new Object(new CoordF(8.5f, 11.5f), new CoordF(0, 0), LampSprite, false);
+        static Object Obj2 = new Object(new CoordF(25.5f, 8.5f), new CoordF(0, 0), LampSprite, false);
         static List<Object> ObjList = new List<Object>();
         static List<Object> Enemies = new List<Object>();
-        static List<Sprite> AnimationObj3 = new List<Sprite>();
 
         static int MapWidth = 16;			
         static int MapHeight = 32;
@@ -288,10 +283,24 @@ namespace GET
 
         static void WriteObjects()
         {       
-            foreach (Object obj in ObjList)
+            for(int i = 0; i < ObjList.Count; i++)
             {
-                float VecX = obj.coords.X - PlayerX;
-                float VecY = obj.coords.Y - PlayerY;
+                Object tempObj;
+                tempObj = ObjList[i];
+                tempObj.coords.X += tempObj.velocity.X * deltaTime;
+                tempObj.coords.Y += tempObj.velocity.Y * deltaTime;
+                ObjList[i] = tempObj;
+
+                if(map[(int)ObjList[i].coords.X, (int)ObjList[i].coords.Y] == '#')
+                {
+                    Object tempObj_;
+                    tempObj_ = ObjList[i];
+                    tempObj_.remove = true;
+                    ObjList[i] = tempObj_;
+                }
+
+                float VecX = ObjList[i].coords.X - PlayerX;
+                float VecY = ObjList[i].coords.Y - PlayerY;
                 float DistanceFromPlayer = MathF.Sqrt(VecX * VecX + VecY * VecY);
 
                 float EyeX = MathF.Sin(PlayerA);
@@ -311,7 +320,7 @@ namespace GET
                     float ObjectCeiling = (float)(ScreenHeight / 2.0) - ScreenHeight / ((float)DistanceFromPlayer);
                     float ObjectFloor = ScreenHeight - ObjectCeiling;
                     float ObjectHeight = ObjectFloor - ObjectCeiling;
-                    float ObjectAspectRatio = (float)obj.sprite.height / (float)obj.sprite.width;
+                    float ObjectAspectRatio = (float)ObjList[i].sprite.height / (float)ObjList[i].sprite.width;
                     float ObjectWidth = ObjectHeight / ObjectAspectRatio;
                     float MiddleOfObject = (0.5f * (ObjectAngle / (FOV / 2.0f)) + 0.5f) * (float)ScreenWidth;
 
@@ -320,19 +329,21 @@ namespace GET
                         {
                             float SampleX = lx / ObjectWidth;
                             float SampleY = ly / ObjectHeight;
-                            char s_char = obj.sprite.SampleGlyphCharSprite(SampleX, SampleY);
-                            byte s_byte = obj.sprite.SampleGlyphByteSprite(SampleX, SampleY);
-                            short s_attribute = obj.sprite.SampleGlyphAttribute(SampleX, SampleY);
+                            char s_char = ObjList[i].sprite.SampleGlyphCharSprite(SampleX, SampleY);
+                            byte s_byte = ObjList[i].sprite.SampleGlyphByteSprite(SampleX, SampleY);
+                            short s_attribute = ObjList[i].sprite.SampleGlyphAttribute(SampleX, SampleY);
                             int ObjectColumn = (int)(MiddleOfObject + lx - (ObjectWidth / 2.0f));
                             if (ObjectColumn >= 0 && ObjectColumn < ScreenWidth)
                                 if (s_char != ' ' && DepthBuffer[ObjectColumn] >= DistanceFromPlayer || s_byte != 32 && DepthBuffer[ObjectColumn] >= DistanceFromPlayer)
                                 {
-                                    //buf[(int)(ObjectCeiling + ly) * ScreenWidth + (int)ObjectColumn].Char.AsciiChar = (byte)(int)s_char;
-                                    buf[(int)(ObjectCeiling + ly) * ScreenWidth + (int)ObjectColumn].Char.AsciiChar = s_byte;
-                                    buf[(int)(ObjectCeiling + ly) * ScreenWidth + (int)ObjectColumn].Attributes = s_attribute;
+                                    DrawB((int)ObjectColumn, (int)(ObjectCeiling + ly), s_byte, s_attribute);
                                     DepthBuffer[ObjectColumn] = DistanceFromPlayer;
                                 }
                         }
+                }
+                if(ObjList[i].remove == true)
+                {
+                    ObjList.Remove(ObjList[i]);
                 }
             }
         }
@@ -344,41 +355,52 @@ namespace GET
 
             DepthBuffer[x] = DistanceToWall;
 
-            byte Shade;
+            PIXEL Shade;
+            COLOUR attribute;
             for (int y = 0; y < ScreenHeight; y++)
             {
 
                 if (y < Ceiling)
                 {
-                    buf[y * ScreenWidth + x].Char.AsciiChar = 32;
+                    SetPixel(x, y, PIXEL.PIXEL_BLANK);
                 }
                 else if (y > Ceiling && y <= Floor)
                 {
 
-                    if (DistanceToWall <= Depth / 4.0f) Shade = 219;
-                    else if (DistanceToWall < Depth / 3.0f) Shade = 178;
-                    else if (DistanceToWall < Depth / 2.0f) Shade = 177;
-                    else if (DistanceToWall < Depth) Shade = 176;
-                    else Shade = 32;
+                    if (DistanceToWall <= Depth / 4.0f) Shade = PIXEL.PIXEL_SOLID;
+                    else if (DistanceToWall < Depth / 3.0f) Shade = PIXEL.PIXEL_THREEQUARTERS;
+                    else if (DistanceToWall < Depth / 2.0f) Shade = PIXEL.PIXEL_HALF;
+                    else if (DistanceToWall < Depth) Shade = PIXEL.PIXEL_QUARTER;
+                    else Shade = PIXEL.PIXEL_BLANK;
 
-                    if (Boundary == true) Shade = 32;
-
-                    buf[y * ScreenWidth + x].Attributes = 1;
-                    if (Door == true)
-                        buf[y * ScreenWidth + x].Attributes = 2;
-                    buf[y * ScreenWidth + x].Char.AsciiChar = Shade;
+                    if (Boundary == true)
+                    {
+                        Shade = PIXEL.PIXEL_BLANK;
+                        attribute = COLOUR.FG_BLACK;
+                    }
+                    else
+                    {
+                        if (Door == true)
+                            attribute = COLOUR.FG_DARK_GREEN;
+                        else
+                            attribute = COLOUR.FG_DARK_BLUE;
+                    }
+                    
+                    DrawA(x, y, Shade, attribute);
                 }
 
                 else
                 {
                     float shading = 1.0f - (((float)y - ScreenHeight / 2.0f) / ((float)ScreenHeight / 2.0f));
-                    if (shading < 0.25) Shade = 219;
-                    else if (shading < 0.5) Shade = 178;
-                    else if (shading < 0.75) Shade = 177;
-                    else if (shading < 0.9) Shade = 176;
-                    else Shade = 32;
-                    buf[y * ScreenWidth + x].Char.AsciiChar = Shade;
-                    buf[y * ScreenWidth + x].Attributes = 8;
+                    if (shading < 0.25) Shade = PIXEL.PIXEL_SOLID;
+                    else if (shading < 0.5) Shade = PIXEL.PIXEL_THREEQUARTERS;
+                    else if (shading < 0.75) Shade = PIXEL.PIXEL_HALF;
+                    else if (shading < 0.9) Shade = PIXEL.PIXEL_QUARTER;
+                    else Shade = PIXEL.PIXEL_BLANK;
+
+                    DrawA(x, y, Shade, COLOUR.FG_DARK_GREY);
+                    //buf[y * ScreenWidth + x].Char.AsciiChar = Shade;
+                    //buf[y * ScreenWidth + x].Attributes = (short)COLOUR.FG_DARK_GREY;
                 }
             }
         }
@@ -466,7 +488,7 @@ namespace GET
     {
         static void Main(string[] args)
         {
-            GameEngine.CreateConsole(70, 220);
+            GameEngine.CreateConsole(70, 220, 10, 10, "FirstPersonShooter"); //70, 220 normal; 120 320 very good
             Console.CursorVisible = false;
             Console.Clear();
             new Game();
