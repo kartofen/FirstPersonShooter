@@ -14,16 +14,14 @@ namespace ConsoleGameEngine
                 https://stackoverflow.com/a/29971246
                 important: lpdword > int*
         */
-        //public static SafeFileHandle h = CreateFile("CONOUT$", 0x40000000, 2, IntPtr.Zero, FileMode.Open, 0, IntPtr.Zero);
-        public static IntPtr Consoleh = GetStdHandle(STD_OUTPUT_HANDLE);
-        public static CharInfo[] buf;
-        public static SmallRect rect;
+        static IntPtr Consoleh = GetStdHandle(STD_OUTPUT_HANDLE);
+        static CharInfo[] buf;
+        static SmallRect rect;
         public static int ScreenHeight { get; set; }
         public static int ScreenWidth { get; set; }
-        public static ConsoleKeyInfo key { get; set; } = new ConsoleKeyInfo();
         public static float deltaTime { get; set; }
         public static int GameTick { get; set; } = 0;
-        public static KeyState[] keys = new KeyState[256]; 
+        static KeyState[] keys = new KeyState[256]; 
         static short[] keyOldState = new short[256];
         static short[] keyNewState = new short[256];
         static string AppName;
@@ -33,40 +31,38 @@ namespace ConsoleGameEngine
             OnGameStart();
         }
 
-        public unsafe static void CreateConsole(int height, int width,int fontWidth, int fontHeight, string appName)
+        public unsafe static void CreateConsole(int height, int width, string appName)
         {
+            //set console
             ScreenHeight = height;
             ScreenWidth = width;
             buf = new CharInfo[ScreenHeight*ScreenWidth];
             rect = new SmallRect() { Left = 0, Top = 0, Right = (short)ScreenWidth, Bottom = (short)ScreenHeight };
             AppName = appName;
-            
 
-            /*CONSOLE_FONT_INFO_EX test = new CONSOLE_FONT_INFO_EX();
-            GetCurrentConsoleFontEx(Consoleh, false, ref test);*/
+            /*string font = "Consolas";
 
-            /*string fontName = "Consolas";
-
-            CONSOLE_FONT_INFO_EX newInfo = new CONSOLE_FONT_INFO_EX();
-            newInfo.cbSize = (uint) Marshal.SizeOf(newInfo);
-            newInfo.nFont = 0;
-            newInfo.dwFontSize = new Coord(3, 5);
-            //newInfo.dwFontSize = new Coord(test.dwFontSize.X, test.dwFontSize.Y);
-            newInfo.FontFamily = 0x00;
-            newInfo.FontWeight = 400;
-            IntPtr ptr = new IntPtr(newInfo.FaceName);
-            Marshal.Copy(fontName.ToCharArray(), 0, ptr, fontName.Length);
-            char[] charFontName = fontName.ToCharArray();
-            for (int i = 0; i < charFontName.Length; i++)
+            FontInfo before = new FontInfo
             {
-                newInfo.FaceName[i] = charFontName[i];
-            }
+                cbSize = Marshal.SizeOf<FontInfo>()
+            };
 
-            SetCurrentConsoleFontEx(Consoleh, false, newInfo);*/
+            FontInfo set = new FontInfo
+            {
+                cbSize = Marshal.SizeOf<FontInfo>(),
+                Font = 0,
+                FontSize = new Coord(10, 10), //fontSize > 0 ? fontSize : before.FontSize
+                FontFamily = FF_DONTCARE,
+                FontWeight = TMPF_TRUETYPE,
+                FontName = font,
+            };
+
+            SetCurrentConsoleFontEx(Consoleh, false, ref set);*/
         }
 
         public void OnGameStart()
         {
+            //create thread, not sure if its working
             Thread thread = new Thread(GameThread);
             thread.Start();
         }
@@ -76,15 +72,20 @@ namespace ConsoleGameEngine
             DateTime time1 = DateTime.Now;
             DateTime time2 = DateTime.Now;
 
+            //create resources
             OnUserCreate();
         
+            //game loop
             while(true)
             {
                 GameTick++;
 
+                //setting delta time
                 time2 = DateTime.Now;
                 deltaTime = (time2.Ticks - time1.Ticks) / 10000000f;
+                time1 = time2;
 
+                //manage keys
                 for (int i = 0; i < 256; i++)
 				{
 					keyNewState[i] = GetAsyncKeyState(i);
@@ -108,18 +109,18 @@ namespace ConsoleGameEngine
 					keyOldState[i] = keyNewState[i];
                 }
 
-                OnKeyPressed();
+                ManageKeyInput();
                 OnUserUpdate();
                 AddInformationToBuffer();
+
+                //set title and write everything
+                SetConsoleTitle(AppName+" Power by ConsoleGameEngine   FPS: "+1/deltaTime);
 
                 bool b = WriteConsoleOutput(Consoleh, buf,
                     new Coord() { X = (short)ScreenWidth, Y = (short)ScreenHeight },
                     new Coord() { X = 0, Y = 0 },
                     ref rect
                 );
-                SetConsoleTitle(AppName+"  Power by ConsoleGameEngine   FPS: "+1/deltaTime);
-
-                time1 = time2;
             }
         }
 
@@ -134,6 +135,26 @@ namespace ConsoleGameEngine
                 buf[y*ScreenWidth + (x + i)].Attributes = (short)color;
                 i++;
             }
+        }
+
+        public static KeyState GetKey(int KeyCode)
+        {
+            return keys[KeyCode];
+        }
+
+        public static PIXEL GetBufferPixelA(int x, int y)
+        {
+            return (PIXEL)buf[y*ScreenWidth + x].Char.AsciiChar;
+        }
+
+        public static char GetBufferPixelB(int x, int y)
+        {
+            return (char)buf[y*ScreenWidth + x].Char.AsciiChar;
+        }
+
+        public static COLOUR GetBufferColour(int x, int y)
+        {
+            return (COLOUR)buf[y*ScreenWidth + x].Attributes;
         }
 
         public static void FillA(int x1, int y1, int x2, int y2, PIXEL pixel, COLOUR colour)
@@ -186,19 +207,9 @@ namespace ConsoleGameEngine
         }
 
         protected virtual void OnUserUpdate() { return; }
-        protected virtual void OnKeyPressed() { return; }
         protected virtual void OnUserCreate() { return; }
-        protected virtual void AddInformationToBuffer() 
-        {
-            for (int i = 0; i < buf.Length; i++)
-            {
-                if (buf[i].Attributes == 0)
-                {
-                    buf[i].Attributes = (short)COLOUR.FG_GREY;
-                }
-            }
-            return;
-        }
+        protected virtual void ManageKeyInput() { return; }        
+        protected virtual void AddInformationToBuffer() { return; }
 
         
         public enum COLOUR
@@ -239,44 +250,41 @@ namespace ConsoleGameEngine
 
         public enum PIXEL
         {
-            PIXEL_SOLID = 219,
+            PIXEL_SOLID         = 219,
             PIXEL_THREEQUARTERS = 178,
-            PIXEL_HALF = 177,
-            PIXEL_QUARTER = 176,
-            PIXEL_BLANK = 32,
+            PIXEL_HALF          = 177,
+            PIXEL_QUARTER       = 176,
+            PIXEL_BLANK         = 32,
         };
+
+        //currently not used
         public const uint STD_INPUT_HANDLE = unchecked((uint)-10),
             STD_OUTPUT_HANDLE = unchecked((uint)-11),
             STD_ERROR_HANDLE = unchecked((uint)-12);
-
-        private const int TMPF_TRUETYPE = 4;
-        private const int LF_FACESIZE = 32;
+        private const int TMPF_TRUETYPE = 400;
+        private const short FF_DONTCARE = 0x00;
         private static IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
 
 
-        [StructLayout(LayoutKind.Sequential)]
-        internal unsafe struct CONSOLE_FONT_INFO_EX 
+        /*[return: MarshalAs(UnmanagedType.Bool)]
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        internal static extern bool SetCurrentConsoleFontEx(IntPtr hConsoleOutput, bool MaximumWindow, ref FontInfo  ConsoleCurrentFontEx);
+
+        [return: MarshalAs(UnmanagedType.Bool)]
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        internal static extern bool GetCurrentConsoleFontEx(IntPtr hConsoleOutput, bool MaximumWindow, ref FontInfo  ConsoleCurrentFontEx);*/
+
+        /*public struct FontInfo
         {
-            internal uint cbSize;
-            internal uint nFont;
-            internal Coord dwFontSize;
+            internal int cbSize;
+            internal int Font;
+            internal Coord FontSize;
             internal int FontFamily;
             internal int FontWeight;
-            internal fixed char FaceName[LF_FACESIZE];
-        }  
-
-
-        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        static extern bool GetCurrentConsoleFontEx(
-            IntPtr consoleOutput, 
-            bool maximumWindow,
-            ref CONSOLE_FONT_INFO_EX lpConsoleCurrentFontEx);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        static extern bool SetCurrentConsoleFontEx(
-            IntPtr consoleOutput, 
-            bool maximumWindow,
-            CONSOLE_FONT_INFO_EX consoleCurrentFontEx);
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+            //[MarshalAs(UnmanagedType.ByValArray, ArraySubType = UnmanagedType.wc, SizeConst = 32)]
+            internal string FontName;
+        }*/
 
         [DllImport("User32.dll")]
         public static extern short GetAsyncKeyState(int vKey);
@@ -438,7 +446,5 @@ namespace ConsoleGameEngine
                     return this.sprite_attributes[sy, sx];
             }
         }
-
-
     }
 }

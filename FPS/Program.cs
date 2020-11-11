@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using ConsoleGameEngine;
+//dll is old and not used bc i am still working on the GameEngine, this is a test app
 
 namespace FPS
 {
@@ -16,13 +17,15 @@ namespace FPS
 
         protected override void OnUserCreate()
         {
+            Obj1 = new Object(new CoordF(8.5f, 11.5f), new CoordF(0, 0), LampSprite, false);
+            Obj2 = new Object(new CoordF(25.5f, 8.5f), new CoordF(0, 0), LampSprite, false);
             ObjList.Add(Obj1);
             ObjList.Add(Obj2);
         }
 
-        protected override void OnKeyPressed()
+        protected override void ManageKeyInput()
         {
-            if(keys['W'].Held)
+            if(GetKey('W').Held)
             {
                 PlayerX += MathF.Sin(PlayerA) * Speed * deltaTime;
                 PlayerY += MathF.Cos(PlayerA) * Speed * deltaTime;
@@ -32,11 +35,11 @@ namespace FPS
                     PlayerY -= MathF.Cos(PlayerA) * Speed * deltaTime;
                 }
             }
-            if(keys['A'].Held)
+            if(GetKey('A').Held)
             {
                 PlayerA -= (1f) * deltaTime;
             }
-            if(keys['S'].Held)
+            if(GetKey('S').Held)
             {
                 PlayerX -= MathF.Sin(PlayerA) * Speed * deltaTime;
                 PlayerY -= MathF.Cos(PlayerA) * Speed * deltaTime;
@@ -46,11 +49,11 @@ namespace FPS
                     PlayerY += MathF.Cos(PlayerA) * Speed * deltaTime;
                 }
             }
-            if(keys['D'].Held)
+            if(GetKey('D').Held)
             {
                 PlayerA += (1f) * deltaTime;
             }
-            if(keys['Q'].Held)
+            if(GetKey('Q').Held)
             {
                 PlayerX -= MathF.Cos(PlayerA) * Speed * deltaTime;
                 PlayerY += MathF.Sin(PlayerA) * Speed * deltaTime;
@@ -61,7 +64,7 @@ namespace FPS
                     
                 }
             }
-            if(keys['E'].Held)
+            if(GetKey('E').Held)
             {
                 PlayerX += MathF.Cos(PlayerA) * Speed * deltaTime;
                 PlayerY -= MathF.Sin(PlayerA) * Speed * deltaTime;
@@ -71,14 +74,14 @@ namespace FPS
                     PlayerY += MathF.Sin(PlayerA) * Speed * deltaTime;
                 }
             }
-            if(keys['F'].Released)
+            if(GetKey('F').Released)
             {
                 if(map[(int)PlayerX + 1, (int)PlayerY] == 'D') map[(int)PlayerX + 1, (int)PlayerY] = '.';
                 else if(map[(int)PlayerX - 1, (int)PlayerY] == 'D') map[(int)PlayerX - 1, (int)PlayerY] = '.';
                 else if(map[(int)PlayerX, (int)PlayerY + 1] == 'D') map[(int)PlayerX , (int)PlayerY + 1] = '.';
                 else if(map[(int)PlayerX, (int)PlayerY - 1] == 'D') map[(int)PlayerX, (int)PlayerY - 1] = '.';
             }
-            if(keys[0x20].Released) //spacebar
+            if(GetKey(0x20).Released) //spacebar
             {
                 Object o;
                 o.coords.X = PlayerX + MathF.Sin(PlayerA) * 3.0f;
@@ -107,9 +110,9 @@ namespace FPS
             DrawToScreenBuffer("Angle: " + PlayerA, 1, 33, COLOUR.FG_DARK_RED);
             DrawToScreenBuffer("GameTick: " + GameTick, 2, 33, COLOUR.FG_DARK_RED);
 
-            for (int i = 0; i < buf.Length; i++)
+            for (int i = 0; i < ScreenHeight*ScreenWidth; i++)
             {
-                if (buf[i].Attributes == 0)
+                if (GetBufferColour(i, 0) == COLOUR.FG_BLACK)
                 {
                     SetAttribute(i, 0, COLOUR.FG_GREY);
                 }
@@ -210,8 +213,8 @@ namespace FPS
             10, 8
         );
         
-        static Object Obj1 = new Object(new CoordF(8.5f, 11.5f), new CoordF(0, 0), LampSprite, false);
-        static Object Obj2 = new Object(new CoordF(25.5f, 8.5f), new CoordF(0, 0), LampSprite, false);
+        static Object Obj1;
+        static Object Obj2;
         static List<Object> ObjList = new List<Object>();
         static List<Object> Enemies = new List<Object>();
 
@@ -277,7 +280,7 @@ namespace FPS
 
                 RayCasting(StepSize, ref DistanceToWall, ref Boundary, ref HitWall, ref Door, EyeX, EyeY);
 
-                Shading(buf, x, DistanceToWall, Boundary, Door);
+                Shading(x, DistanceToWall, Boundary, Door);
             }
         }
 
@@ -348,7 +351,7 @@ namespace FPS
             }
         }
 
-        static void Shading(CharInfo[] buf, int x, float DistanceToWall, bool Boundary, bool Door)
+        static void Shading(int x, float DistanceToWall, bool Boundary, bool Door)
         {
             int Ceiling = (int)((float)(ScreenHeight / 2.0) - ScreenHeight / ((float)DistanceToWall));
             int Floor = ScreenHeight - Ceiling;
@@ -362,7 +365,7 @@ namespace FPS
 
                 if (y < Ceiling)
                 {
-                    SetPixel(x, y, PIXEL.PIXEL_BLANK);
+                    DrawA(x, y, PIXEL.PIXEL_BLANK, COLOUR.FG_BLACK);
                 }
                 else if (y > Ceiling && y <= Floor)
                 {
@@ -450,7 +453,25 @@ namespace FPS
                                 }
                             }
 
-                        float[] sorted = SortFVector(f);
+                        //sort vector
+                        float[] sorted = new float[4];
+                        for(int i = 0; i < 4; i++)
+                        {
+                            sorted[i] = f[0, i];
+                        }
+                        Array.Sort(sorted);
+                        for (int j = 0; j < 4; j++)
+                        {
+                            if(sorted[j] == f[0, 0])
+                                sorted[j] = f[1, 0];
+                            if(sorted[j] == f[0, 1])
+                                sorted[j] = f[1, 1];
+                            if(sorted[j] == f[0, 2])
+                                sorted[j] = f[1, 2];
+                            if(sorted[j] == f[0, 3])
+                                sorted[j] = f[1, 3];
+                                
+                        }
 
                         float Bound = 0.01f;
                         if (MathF.Acos(sorted[0]) < Bound) Boundary = true;
@@ -459,36 +480,20 @@ namespace FPS
                 }
             }
         }
-
-        static float[] SortFVector(float[,] f)
-        {
-            //contains ints representing the order from smallest to farthest
-            float[] sorted = new float[4];
-            for(int i = 0; i < 4; i++)
-            {
-                sorted[i] = f[0, i];
-            }
-            Array.Sort(sorted);
-            for (int j = 0; j < 4; j++)
-            {
-                if(sorted[j] == f[0, 0])
-                    sorted[j] = f[1, 0];
-                if(sorted[j] == f[0, 1])
-                    sorted[j] = f[1, 1];
-                if(sorted[j] == f[0, 2])
-                    sorted[j] = f[1, 2];
-                if(sorted[j] == f[0, 3])
-                    sorted[j] = f[1, 3];
-                    
-            }
-            return sorted;
-        }
     }
     class Program
     {
         static void Main(string[] args)
         {
-            GameEngine.CreateConsole(70, 220, 10, 10, "FirstPersonShooter"); //70, 220 normal; 120 320 very good
+            if(args.Length == 0)
+                GameEngine.CreateConsole(70, 220, "FirstPersonShooter"); //70, 220 normal; 115 360 very good
+            else if(args[0] == "normal")
+                GameEngine.CreateConsole(70, 220, "FirstPersonShooter"); //70, 220 normal; 115 360 very good
+            else if(args[0] == "good")
+                GameEngine.CreateConsole(115, 360, "FirstPersonShooter"); //70, 220 normal; 115 360 very good
+            else
+                GameEngine.CreateConsole(int.Parse(args[1]), int.Parse(args[0]), "FirstPersonShooter"); //70, 220 normal; 115 360 very good
+
             Console.CursorVisible = false;
             Console.Clear();
             new Game();
